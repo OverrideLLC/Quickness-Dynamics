@@ -8,9 +8,7 @@ import org.quickness.dynamics.ui.theme.QuicknessDynamicsTheme
 @Composable
 @Preview
 fun App() {
-    QuicknessDynamicsTheme(
-        darkTheme = true
-    ) {
+    QuicknessDynamicsTheme {
         NavigationStart()
     }
 }
