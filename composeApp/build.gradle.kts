@@ -46,7 +46,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.navigation)
-            implementation("network.chaintech:qr-kit:3.0.6")
+            implementation(libs.qr.kit)
+            implementation("io.github.koalaplot:koalaplot-core:0.8.0")
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

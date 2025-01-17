@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,26 +32,29 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.quickness.dynamics.plataform.Uri
+import androidx.navigation.NavController
+import org.quickness.dynamics.utils.routes.RoutesStart
 import qrgenerator.qrkitpainter.rememberQrKitPainter
+import java.awt.Desktop
+import java.net.URI
 
 @Composable
-fun LoginScreen() = Screen()
+fun LoginScreen(navController: NavController) = Screen(navController)
 
 @Composable
-private fun Screen() {
+private fun Screen(navController: NavController) {
     val infiniteTransition = rememberInfiniteTransition()
     val color1 by infiniteTransition.animateColor(
         initialValue = colorScheme.background,
-        targetValue = colorScheme.background,
+        targetValue = colorScheme.primary,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 3000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
     val color2 by infiniteTransition.animateColor(
-        initialValue = colorScheme.background,
-        targetValue = colorScheme.primary,
+        initialValue = colorScheme.primary,
+        targetValue = colorScheme.background,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 4000, easing = LinearEasing, delayMillis = 1000),
             repeatMode = RepeatMode.Reverse
@@ -64,7 +68,9 @@ private fun Screen() {
                     .fillMaxSize()
                     .padding(it)
             ) {
-                Content()
+                Content(
+                    navController
+                )
             }
         },
         containerColor = Color.Transparent,
@@ -75,7 +81,7 @@ private fun Screen() {
 }
 
 @Composable
-private fun Content() {
+private fun Content(navController: NavController) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -95,13 +101,13 @@ private fun Content() {
         ) {
             InfoContent()
             Spacer(modifier = Modifier.padding(16.dp))
-            QrContent()
+            QrContent(navController)
         }
     }
 }
 
 @Composable
-private fun QrContent() {
+private fun QrContent(navController: NavController) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -110,7 +116,8 @@ private fun QrContent() {
             painter = rememberQrKitPainter(data = "NJ2N93N293N23U92N3U23N92N3NU239N239U2N3.2I3M293MI23923M29NU3U293.2M93I2N932N39N323NU923"),
             contentDescription = "Código QR",
             modifier = Modifier
-                .size(300.dp),
+                .size(300.dp)
+                .clickable { navController.navigate(RoutesStart.Home.route) },
             tint = Color.White
         )
         Text(
@@ -161,7 +168,7 @@ private fun InfoContent() {
             modifier = Modifier.padding(bottom = 16.dp)
         )
         TextButton(
-            onClick = { Uri().navigate("https://override.com.mx") },
+            onClick = { Desktop.getDesktop().browse(URI.create("https://override.com.mx")) },
             content = {
                 Text(
                     text = "¿Necesitas ayuda para empezar?",
