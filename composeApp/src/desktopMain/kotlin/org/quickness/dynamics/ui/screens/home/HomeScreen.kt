@@ -1,11 +1,6 @@
 package org.quickness.dynamics.ui.screens.home
 
-import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,10 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,14 +34,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.quickness.dynamics.ui.components.BackgroundAnimated
+import org.quickness.dynamics.ui.components.TextFieldCustom
 import org.quickness.dynamics.ui.navigation.NavigationHome
 import org.quickness.dynamics.utils.routes.RoutesHome
 import quicknessdynamics.composeapp.generated.resources.Res
@@ -69,43 +63,21 @@ fun HomeScreen() = Screen()
 @Composable
 private fun Screen() {
     val navController = rememberNavController()
-    val infiniteTransition = rememberInfiniteTransition()
-    val color1 by infiniteTransition.animateColor(
-        initialValue = colorScheme.background,
-        targetValue = colorScheme.background,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-    val color2 by infiniteTransition.animateColor(
-        initialValue = colorScheme.background,
-        targetValue = colorScheme.primary,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4000, easing = LinearEasing, delayMillis = 1000),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
     Scaffold(
         floatingActionButton = { FloatingAction() },
-        content = { Content(navController) },
+        content = { NavigationHome(navController) },
         topBar = { TopBar() },
         bottomBar = { BottomBar(navController) },
-        snackbarHost = { SnackBar() },
+        containerColor = Color.Transparent,
         modifier = Modifier
+            .fillMaxSize()
             .background(
-                brush = Brush.linearGradient(
-                    listOf(color2, color1, color1)
+                brush = BackgroundAnimated(
+                    colorBackground = colorScheme.background,
+                    colorAnimated = colorScheme.primaryContainer
                 )
             )
-            .fillMaxSize(),
-        containerColor = Color.Transparent
     )
-}
-
-@Composable
-private fun Content(navController: NavHostController) {
-    NavigationHome(navController)
 }
 
 @Composable
@@ -191,7 +163,6 @@ private fun ButtonBottomBar(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-
     val size by animateDpAsState(
         targetValue = if (isHovered) 50.dp else 40.dp,
         animationSpec = tween(durationMillis = 300)
@@ -217,17 +188,19 @@ private fun TopBar() {
     val hover = remember { MutableInteractionSource() }
     val isHovered by hover.collectIsHoveredAsState()
     var isSearching by remember { mutableStateOf(false) }
+    var paddingValues by remember { mutableStateOf(16.dp) }
+    var alignment by remember { mutableStateOf(Alignment.TopCenter) }
+    var searchText by remember { mutableStateOf("") }
     val width by animateDpAsState(
-        targetValue = if (isHovered) if (isSearching) 70.dp else 500.dp else 70.dp,
+        targetValue = if (isHovered) if (isSearching) 70.dp else 400.dp else 70.dp,
         animationSpec = tween(durationMillis = 300)
     )
-    var searchText by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(if (isSearching) 0.dp else 16.dp),
-        contentAlignment = if (isSearching) Alignment.Center else Alignment.TopCenter,
+            .padding(paddingValues),
+        contentAlignment = alignment,
         content = {
             Row(
                 modifier = Modifier
@@ -248,7 +221,11 @@ private fun TopBar() {
                     CircularProgressIndicator(modifier = Modifier.size(50.dp))
                     LaunchedEffect(Unit) {
                         if (isSearching) {
+                            paddingValues = 0.dp
+                            alignment = Alignment.Center
                             delay(2000)
+                            paddingValues = 16.dp
+                            alignment = Alignment.TopCenter
                             isSearching = !isSearching
                         }
                     }
@@ -261,25 +238,15 @@ private fun TopBar() {
                             .size(50.dp),
                         tint = colorScheme.tertiary
                     )
-                    OutlinedTextField(
+                    TextFieldCustom(
                         value = searchText,
                         onValueChange = { searchText = it },
-                        placeholder = { Text("Search...") },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = colorScheme.primary,
-                            unfocusedIndicatorColor = colorScheme.tertiary,
-                            cursorColor = colorScheme.tertiary,
-                            focusedTextColor = colorScheme.primary,
-                            unfocusedTextColor = colorScheme.tertiary,
-                            focusedPlaceholderColor = colorScheme.primary,
-                            unfocusedPlaceholderColor = colorScheme.tertiary,
-                        ),
-                        shape = RoundedCornerShape(32.dp),
-                        singleLine = true,
-                        maxLines = 1,
-                        modifier = Modifier.size(300.dp, 50.dp)
+                        onDone = { isSearching = !isSearching },
+                        onGo = { isSearching = !isSearching },
+                        onSearch = { isSearching = !isSearching },
+                        onSend = { isSearching = !isSearching },
+                        keyboardType = KeyboardType.Text,
+                        placeholder = "Search",
                     )
                 } else {
                     Icon(
@@ -347,23 +314,17 @@ private fun FloatingAction() {
                             )
                         }
                     } else {
-                        iconsList.indexOf(iconsList[indexSelected]).let {
-                            Icon(
-                                painter = painterResource(iconsList[it]),
-                                tint = colorScheme.tertiary,
-                                modifier = Modifier
-                                    .clickable { }
-                                    .size(40.dp),
-                                contentDescription = null,
-                            )
-                        }
+                        Icon(
+                            painter = painterResource(iconsList[iconsList.indexOf(iconsList[indexSelected])]),
+                            tint = colorScheme.tertiary,
+                            modifier = Modifier
+                                .clickable { }
+                                .size(40.dp),
+                            contentDescription = null,
+                        )
                     }
                 }
             )
         }
     )
-}
-
-@Composable
-private fun SnackBar() {
 }
