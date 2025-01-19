@@ -28,10 +28,9 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,32 +41,28 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.viewmodel.koinViewModel
 import org.quickness.dynamics.ui.components.BackgroundAnimated
 import org.quickness.dynamics.ui.components.TextFieldCustom
 import org.quickness.dynamics.ui.navigation.NavigationHome
-import org.quickness.dynamics.utils.routes.RoutesHome
+import org.quickness.dynamics.ui.states.HomeState
 import quicknessdynamics.composeapp.generated.resources.Res
-import quicknessdynamics.composeapp.generated.resources.add_business_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.chat_bubble_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.dark_mode_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.dashboard_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.edit_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.person_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
 import quicknessdynamics.composeapp.generated.resources.search_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.settings_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-import quicknessdynamics.composeapp.generated.resources.widgets_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
 
 @Composable
 fun HomeScreen() = Screen()
 
 @Composable
-private fun Screen() {
+private fun Screen(
+    viewModel: HomeViewModel = koinViewModel()
+) {
     val navController = rememberNavController()
+    val state by remember { viewModel.state }.collectAsState()
     Scaffold(
-        floatingActionButton = { FloatingAction() },
+        floatingActionButton = { FloatingAction(state, viewModel) },
         content = { NavigationHome(navController) },
-        topBar = { TopBar() },
-        bottomBar = { BottomBar(navController) },
+        topBar = { TopBar(state, viewModel) },
+        bottomBar = { BottomBar(navController, state, viewModel) },
         containerColor = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
@@ -81,29 +76,16 @@ private fun Screen() {
 }
 
 @Composable
-private fun BottomBar(navController: NavHostController) {
+private fun BottomBar(
+    navController: NavHostController,
+    state: HomeState,
+    viewModel: HomeViewModel
+) {
     val hover = remember { MutableInteractionSource() }
     val isHovered by hover.collectIsHoveredAsState()
-    var selectedIndex by remember { mutableStateOf(2) }
     val width by animateDpAsState(
         targetValue = if (isHovered) 300.dp else 70.dp,
         animationSpec = tween(durationMillis = 300)
-    )
-    val icons = listOf(
-        Pair(
-            RoutesHome.Settings.route,
-            Res.drawable.settings_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-        ),
-        Pair(RoutesHome.Ai.route, Res.drawable.chat_bubble_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24),
-        Pair(
-            RoutesHome.Dashboard.route,
-            Res.drawable.dashboard_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-        ),
-        Pair(RoutesHome.Profile.route, Res.drawable.person_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24),
-        Pair(
-            RoutesHome.AddBusiness.route,
-            Res.drawable.add_business_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-        )
     )
 
     Box(
@@ -129,24 +111,24 @@ private fun BottomBar(navController: NavHostController) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             if (isHovered) {
-                icons.forEachIndexed { index, pair ->
+                state.bottomBarIcons.forEachIndexed { index, icons ->
                     ButtonBottomBar(
-                        icon = pair.second,
-                        selected = index == selectedIndex,
+                        icon = icons.icon,
+                        selected = index == state.selectedTab,
                         onClick = {
-                            selectedIndex = index
-                            navController.navigate(pair.first)
+                            viewModel.update { copy(selectedTab = index) }
+                            navController.navigate(icons.route)
                         }
                     )
                 }
             } else {
-                icons.indexOf(icons[selectedIndex]).let {
+                state.bottomBarIcons.indexOf(state.bottomBarIcons[state.selectedTab]).let {
                     ButtonBottomBar(
-                        icon = icons[it].second,
+                        icon = state.bottomBarIcons[it].icon,
                         selected = true,
                         onClick = {
-                            selectedIndex = it
-                            navController.navigate(icons[it].first)
+                            viewModel.update { copy(selectedTab = it) }
+                            navController.navigate(state.bottomBarIcons[it].route)
                         }
                     )
                 }
@@ -184,23 +166,22 @@ private fun ButtonBottomBar(
 }
 
 @Composable
-private fun TopBar() {
+private fun TopBar(
+    state: HomeState,
+    viewModel: HomeViewModel
+) {
     val hover = remember { MutableInteractionSource() }
     val isHovered by hover.collectIsHoveredAsState()
-    var isSearching by remember { mutableStateOf(false) }
-    var paddingValues by remember { mutableStateOf(16.dp) }
-    var alignment by remember { mutableStateOf(Alignment.TopCenter) }
-    var searchText by remember { mutableStateOf("") }
     val width by animateDpAsState(
-        targetValue = if (isHovered) if (isSearching) 70.dp else 400.dp else 70.dp,
+        targetValue = if (isHovered) if (state.isSearchBarActive) 70.dp else 400.dp else 70.dp,
         animationSpec = tween(durationMillis = 300)
     )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = alignment,
+            .padding(state.contentPadding),
+        contentAlignment = state.layoutAlignment,
         content = {
             Row(
                 modifier = Modifier
@@ -217,16 +198,24 @@ private fun TopBar() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                if (isSearching) {
+                if (state.isSearchBarActive) {
                     CircularProgressIndicator(modifier = Modifier.size(50.dp))
                     LaunchedEffect(Unit) {
-                        if (isSearching) {
-                            paddingValues = 0.dp
-                            alignment = Alignment.Center
+                        if (state.isSearchBarActive) {
+                            viewModel.update {
+                                copy(
+                                    contentPadding = 0.dp,
+                                    layoutAlignment = Alignment.Center
+                                )
+                            }
                             delay(2000)
-                            paddingValues = 16.dp
-                            alignment = Alignment.TopCenter
-                            isSearching = !isSearching
+                            viewModel.update {
+                                copy(
+                                    isSearchBarActive = false,
+                                    contentPadding = 16.dp,
+                                    layoutAlignment = Alignment.TopCenter
+                                )
+                            }
                         }
                     }
                 } else if (isHovered) {
@@ -234,17 +223,17 @@ private fun TopBar() {
                         painter = painterResource(Res.drawable.search_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24),
                         contentDescription = null,
                         modifier = Modifier
-                            .clickable { isSearching = !isSearching }
+                            .clickable { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } }
                             .size(50.dp),
                         tint = colorScheme.tertiary
                     )
                     TextFieldCustom(
-                        value = searchText,
-                        onValueChange = { searchText = it },
-                        onDone = { isSearching = !isSearching },
-                        onGo = { isSearching = !isSearching },
-                        onSearch = { isSearching = !isSearching },
-                        onSend = { isSearching = !isSearching },
+                        value = state.searchBarInput,
+                        onValueChange = { viewModel.update { copy(searchBarInput = it) } },
+                        onDone = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
+                        onGo = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
+                        onSearch = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
+                        onSend = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
                         keyboardType = KeyboardType.Text,
                         placeholder = "Search",
                     )
@@ -262,19 +251,16 @@ private fun TopBar() {
 }
 
 @Composable
-private fun FloatingAction() {
+private fun FloatingAction(
+    state: HomeState,
+    viewModel: HomeViewModel
+) {
     val hover = remember { MutableInteractionSource() }
     val isHovered by hover.collectIsHoveredAsState()
     val size by animateDpAsState(
         targetValue = if (isHovered) 200.dp else 70.dp,
         animationSpec = tween(durationMillis = 300)
     )
-    val iconsList = listOf(
-        Res.drawable.edit_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24,
-        Res.drawable.widgets_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24,
-        Res.drawable.dark_mode_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
-    )
-    var indexSelected by remember { mutableStateOf(1) }
 
     Box(
         modifier = Modifier
@@ -303,24 +289,30 @@ private fun FloatingAction() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 content = {
                     if (isHovered) {
-                        iconsList.forEachIndexed { index, drawableResource ->
+                        state.drawableIcons.forEachIndexed { index, drawableResource ->
                             Icon(
                                 painter = painterResource(drawableResource),
                                 tint = colorScheme.tertiary,
                                 modifier = Modifier
-                                    .clickable { indexSelected = index }
+                                    .clickable { viewModel.update { copy(previousSelectedTab = index) } }
                                     .size(40.dp),
                                 contentDescription = null,
                             )
                         }
                     } else {
                         Icon(
-                            painter = painterResource(iconsList[iconsList.indexOf(iconsList[indexSelected])]),
                             tint = colorScheme.tertiary,
-                            modifier = Modifier
-                                .clickable { }
-                                .size(40.dp),
+                            modifier = Modifier.size(40.dp),
                             contentDescription = null,
+                            painter = painterResource(
+                                state.drawableIcons[
+                                    state.drawableIcons.indexOf(
+                                        state.drawableIcons[
+                                            state.previousSelectedTab
+                                        ]
+                                    )
+                                ]
+                            )
                         )
                     }
                 }
