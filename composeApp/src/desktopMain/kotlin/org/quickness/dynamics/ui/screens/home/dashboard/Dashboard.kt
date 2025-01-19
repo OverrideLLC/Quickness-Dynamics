@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,30 +20,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun DashboardScreen() = Screen()
 
 @Composable
-fun Screen() {
-    val list = mutableListOf<WidgetItem>()
-
+fun Screen(
+    viewModel: DashboardViewModel = koinViewModel()
+) {
+    val state = remember { viewModel.state }
     for (i in 1..100) {
-        list.add(
-            WidgetItem(
+        state.value.list.add(
+            DashboardViewModel.WidgetItem(
                 count = i,
-                size = if (i % 2 == 0) 200.dp else 300.dp,
+                size = if (i % 2 == 0) 400.dp else 300.dp,
                 color = colorScheme.primary.copy(alpha = 0.5f)
             )
         )
     }
-
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
         modifier = Modifier.fillMaxSize(),
         content = {
-            items(list) {
+            items(state.value.list) {
                 Widget(
                     count = it.count,
                     size = it.size,
@@ -68,16 +70,10 @@ private fun Widget(
         content = {
             Text(
                 text = count.toString(),
-                color = colorScheme.background  ,
+                color = colorScheme.background,
                 fontWeight = FontWeight.Bold,
                 fontSize = 30.sp
             )
         }
     )
 }
-
-data class WidgetItem(
-    val count: Int,
-    val size: Dp,
-    val color: Color
-)

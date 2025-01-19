@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import org.quickness.dynamics.ui.screens.home.ai.AiScreen
 import org.quickness.dynamics.ui.screens.home.dashboard.DashboardScreen
 import org.quickness.dynamics.utils.routes.RoutesHome
 
@@ -32,18 +33,7 @@ fun NavigationHome(navHost: NavHostController) {
             DashboardScreen()
         }
         composable(RoutesHome.Ai.route) {
-            Box(
-                contentAlignment = androidx.compose.ui.Alignment.Center,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Text(
-                    text = "AI",
-                    color = colorScheme.tertiary,
-                    fontSize = 50.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
+            AiScreen()
         }
         composable(RoutesHome.Settings.route) {
             Box(

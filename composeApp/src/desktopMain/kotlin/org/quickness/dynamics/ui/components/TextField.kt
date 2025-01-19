@@ -23,6 +23,7 @@ fun TextFieldCustom(
     onSend: () -> Unit = {},
     keyboardType: KeyboardType,
     placeholder: String,
+    modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit
 ) {
     OutlinedTextField(
@@ -51,6 +52,6 @@ fun TextFieldCustom(
             onSearch = { onSearch() },
             onSend = { onSend() }
         ),
-        modifier = Modifier.size(300.dp, 50.dp)
+        modifier = modifier.size(300.dp, 50.dp)
     )
 }

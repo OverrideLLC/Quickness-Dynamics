@@ -45,6 +45,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.quickness.dynamics.ui.components.BackgroundAnimated
 import org.quickness.dynamics.ui.components.TextFieldCustom
 import org.quickness.dynamics.ui.navigation.NavigationHome
+import org.quickness.dynamics.ui.states.HomeState
 import quicknessdynamics.composeapp.generated.resources.Res
 import quicknessdynamics.composeapp.generated.resources.search_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24
 
@@ -110,24 +111,24 @@ private fun BottomBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             if (isHovered) {
-                state.icons.forEachIndexed { index, icons ->
+                state.bottomBarIcons.forEachIndexed { index, icons ->
                     ButtonBottomBar(
                         icon = icons.icon,
-                        selected = index == state.selectedIndex,
+                        selected = index == state.selectedTab,
                         onClick = {
-                            viewModel.update { copy(selectedIndex = index) }
+                            viewModel.update { copy(selectedTab = index) }
                             navController.navigate(icons.route)
                         }
                     )
                 }
             } else {
-                state.icons.indexOf(state.icons[state.selectedIndex]).let {
+                state.bottomBarIcons.indexOf(state.bottomBarIcons[state.selectedTab]).let {
                     ButtonBottomBar(
-                        icon = state.icons[it].icon,
+                        icon = state.bottomBarIcons[it].icon,
                         selected = true,
                         onClick = {
-                            viewModel.update { copy(selectedIndex = it) }
-                            navController.navigate(state.icons[it].route)
+                            viewModel.update { copy(selectedTab = it) }
+                            navController.navigate(state.bottomBarIcons[it].route)
                         }
                     )
                 }
@@ -172,15 +173,15 @@ private fun TopBar(
     val hover = remember { MutableInteractionSource() }
     val isHovered by hover.collectIsHoveredAsState()
     val width by animateDpAsState(
-        targetValue = if (isHovered) if (state.isSearching) 70.dp else 400.dp else 70.dp,
+        targetValue = if (isHovered) if (state.isSearchBarActive) 70.dp else 400.dp else 70.dp,
         animationSpec = tween(durationMillis = 300)
     )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(state.paddingValues),
-        contentAlignment = state.alignment,
+            .padding(state.contentPadding),
+        contentAlignment = state.layoutAlignment,
         content = {
             Row(
                 modifier = Modifier
@@ -197,22 +198,22 @@ private fun TopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                if (state.isSearching) {
+                if (state.isSearchBarActive) {
                     CircularProgressIndicator(modifier = Modifier.size(50.dp))
                     LaunchedEffect(Unit) {
-                        if (state.isSearching) {
+                        if (state.isSearchBarActive) {
                             viewModel.update {
                                 copy(
-                                    paddingValues = 0.dp,
-                                    alignment = Alignment.Center
+                                    contentPadding = 0.dp,
+                                    layoutAlignment = Alignment.Center
                                 )
                             }
                             delay(2000)
                             viewModel.update {
                                 copy(
-                                    isSearching = false,
-                                    paddingValues = 16.dp,
-                                    alignment = Alignment.TopCenter
+                                    isSearchBarActive = false,
+                                    contentPadding = 16.dp,
+                                    layoutAlignment = Alignment.TopCenter
                                 )
                             }
                         }
@@ -222,17 +223,17 @@ private fun TopBar(
                         painter = painterResource(Res.drawable.search_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24),
                         contentDescription = null,
                         modifier = Modifier
-                            .clickable { viewModel.update { copy(isSearching = !isSearching) } }
+                            .clickable { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } }
                             .size(50.dp),
                         tint = colorScheme.tertiary
                     )
                     TextFieldCustom(
-                        value = state.searchText,
-                        onValueChange = { viewModel.update { copy(searchText = it) } },
-                        onDone = { viewModel.update { copy(isSearching = !isSearching) } },
-                        onGo = { viewModel.update { copy(isSearching = !isSearching) } },
-                        onSearch = { viewModel.update { copy(isSearching = !isSearching) } },
-                        onSend = { viewModel.update { copy(isSearching = !isSearching) } },
+                        value = state.searchBarInput,
+                        onValueChange = { viewModel.update { copy(searchBarInput = it) } },
+                        onDone = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
+                        onGo = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
+                        onSearch = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
+                        onSend = { viewModel.update { copy(isSearchBarActive = !isSearchBarActive) } },
                         keyboardType = KeyboardType.Text,
                         placeholder = "Search",
                     )
@@ -288,12 +289,12 @@ private fun FloatingAction(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 content = {
                     if (isHovered) {
-                        state.iconsList.forEachIndexed { index, drawableResource ->
+                        state.drawableIcons.forEachIndexed { index, drawableResource ->
                             Icon(
                                 painter = painterResource(drawableResource),
                                 tint = colorScheme.tertiary,
                                 modifier = Modifier
-                                    .clickable { viewModel.update { copy(indexSelected = index) } }
+                                    .clickable { viewModel.update { copy(previousSelectedTab = index) } }
                                     .size(40.dp),
                                 contentDescription = null,
                             )
@@ -304,10 +305,10 @@ private fun FloatingAction(
                             modifier = Modifier.size(40.dp),
                             contentDescription = null,
                             painter = painterResource(
-                                state.iconsList[
-                                    state.iconsList.indexOf(
-                                        state.iconsList[
-                                            state.indexSelected
+                                state.drawableIcons[
+                                    state.drawableIcons.indexOf(
+                                        state.drawableIcons[
+                                            state.previousSelectedTab
                                         ]
                                     )
                                 ]
