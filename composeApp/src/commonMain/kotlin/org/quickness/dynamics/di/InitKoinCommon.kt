@@ -9,5 +9,7 @@ fun initKoinCommon(
     appDeclaration?.invoke(this)
     modules(
         NativeModule,
+        ServiceModule,
+        RepositoryModule,
     )
 }

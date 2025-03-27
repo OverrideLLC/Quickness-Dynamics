@@ -15,6 +15,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import org.quickness.dynamics.ui.screens.home.ai.AiScreen
 import org.quickness.dynamics.ui.screens.home.dashboard.DashboardScreen
+import org.quickness.dynamics.ui.screens.home.profile.ProfileScreen
+import org.quickness.dynamics.ui.screens.home.settings.SettingsScreen
 import org.quickness.dynamics.utils.routes.RoutesHome
 
 @Composable
@@ -29,40 +31,10 @@ fun NavigationHome(navHost: NavHostController) {
             slideOutHorizontally(targetOffsetX = { -it })
         },
     ) {
-        composable(RoutesHome.Dashboard.route) {
-            DashboardScreen()
-        }
-        composable(RoutesHome.Ai.route) {
-            AiScreen()
-        }
-        composable(RoutesHome.Settings.route) {
-            Box(
-                contentAlignment = androidx.compose.ui.Alignment.Center,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Text(
-                    text = "Settings",
-                    color = colorScheme.tertiary,
-                    fontSize = 50.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-        }
-        composable(RoutesHome.Profile.route) {
-            Box(
-                contentAlignment = androidx.compose.ui.Alignment.Center,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Text(
-                    text = "Profile",
-                    color = colorScheme.tertiary,
-                    fontSize = 50.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-        }
+        composable(RoutesHome.Dashboard.route) { DashboardScreen() }
+        composable(RoutesHome.Ai.route) { AiScreen() }
+        composable(RoutesHome.Settings.route) { SettingsScreen() }
+        composable(RoutesHome.Profile.route) { ProfileScreen() }
         composable(RoutesHome.AddBusiness.route) {
             Box(
                 contentAlignment = androidx.compose.ui.Alignment.Center,
